@@ -50,7 +50,17 @@ box-shadow:0 1px 4px rgba(0,0,0,.1);display:none}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map = L.map('map').setView([51.77, 0.54], 9);
+const map = L.map('map', {
+  minZoom: 8,
+  maxZoom: 14,
+  maxBounds: L.latLngBounds([[51.35, -0.5], [52.2, 1.5]]),
+  maxBoundsViscosity: 1.0,
+  zoomSnap: 0.25,
+  zoomDelta: 0.5,
+  inertia: true,
+  inertiaDeceleration: 2000
+}).setView([51.77, 0.54], 9);
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
   attribution: '© OpenStreetMap'
@@ -65,12 +75,17 @@ const areas = {
   EN: '#2ca9a4'
 };
 const files = ['CM', 'CO', 'SS', 'IG', 'RM', 'EN'];
+
 const districtInfo = {
   "CM16": { main: "Epping", locals: ["Theydon Bois", "North Weald", "Waltham Abbey"] },
   "CM20": { main: "Harlow", locals: ["Town Centre", "Church Langley", "Newhall"] },
   "CM1": { main: "Chelmsford", locals: ["Writtle", "Broomfield"] },
   "CM2": { main: "Chelmsford", locals: ["Great Baddow", "Galleywood"] },
-  "CO1": { main: "Colchester (Central)" }
+  "CO1": { main: "Colchester (Central)" },
+  "SS1": { main: "Southend-on-Sea" },
+  "IG10": { main: "Loughton" },
+  "RM14": { main: "Upminster" },
+  "EN9": { main: "Waltham Abbey" }
 };
 
 const essexBounds = L.latLngBounds([[51.42, -0.1], [52.19, 1.25]]);
@@ -96,18 +111,17 @@ Promise.all(
         codeLayer.set(code, layer);
         codeBounds.set(code, layer.getBounds());
         const c = layer.getBounds().getCenter();
+        const info = districtInfo[code] || { main: "Unknown Area", locals: [] };
         const icon = L.divIcon({
           className: "pc-label",
-          html: `<span style="color:${areas[f]}">${code}</span>`
+          html: `<span style="color:${areas[f]}">${code}<br><small>${info.main}</small></span>`
         });
         const marker = L.marker(c, { icon });
-        const info = districtInfo[code];
-        if (info)
-          marker.bindTooltip(`${code} — ${info.main}`, {
-            direction: "top",
-            offset: [0, -8]
-          });
         marker.addTo(labelGroup);
+        marker.bindTooltip(`${code} — ${info.main}`, {
+          direction: "top",
+          offset: [0, -8]
+        });
         layer.on("mouseover", () => highlight(code));
         layer.on("mouseout", () => !locked && clearHighlight());
         layer.on("click", () => toggleLock(code));
@@ -115,7 +129,7 @@ Promise.all(
     }).addTo(layerGroup);
   });
   buildSidebar();
-  map.fitBounds(essexBounds.pad(0.05));
+  map.flyToBounds(essexBounds.pad(0.05), { duration: 2 });
   map.on("zoomend", () =>
     document.body.classList.toggle("labels-visible", map.getZoom() >= 10)
   );
@@ -145,14 +159,14 @@ function toggleLock(code) {
   } else {
     locked = code;
     highlight(code);
-    if (codeBounds.has(code)) map.flyToBounds(codeBounds.get(code).pad(0.05));
+    if (codeBounds.has(code)) map.flyToBounds(codeBounds.get(code).pad(0.08), { duration: 1.8 });
     resetBtn.style.display = 'block';
   }
 }
 function resetView() {
   locked = null;
   clearHighlight();
-  map.flyToBounds(essexBounds.pad(0.05));
+  map.flyToBounds(essexBounds.pad(0.05), { duration: 1.8 });
   resetBtn.style.display = 'none';
 }
 resetBtn.onclick = () => resetView();
@@ -165,7 +179,7 @@ function buildSidebar() {
       const d = districtInfo[c] || {};
       return `<div class="item" data-code="${c}">
         <div class="pc">${c}</div>
-        <div class="mtown">${d.main || ""}</div>
+        <div class="mtown">${d.main || "—"}</div>
         <div class="locals">${(d.locals || []).join(', ')}</div>
       </div>`;
     })
