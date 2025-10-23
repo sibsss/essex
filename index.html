@@ -50,72 +50,138 @@ box-shadow:0 1px 4px rgba(0,0,0,.1);display:none}
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const map=L.map('map').setView([51.77,0.54],9);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const map = L.map('map').setView([51.77, 0.54], 9);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap'
+}).addTo(map);
 
-const areas={CM:'#1f77b4',CO:'#ff7f0e',SS:'#2ca02c',IG:'#d62728',RM:'#9467bd',EN:'#2ca9a4'};
-const files=['CM','CO','SS','IG','RM','EN'];
-const districtInfo={{"CM16":{main:"Epping",locals:["Theydon Bois","North Weald","Waltham Abbey"]},"CM20":{main:"Harlow",locals:["Town Centre","Church Langley","Newhall"]},"CM1":{main:"Chelmsford",locals:["Writtle","Broomfield"]},"CM2":{main:"Chelmsford",locals:["Great Baddow","Galleywood"]},"CO1":{main:"Colchester (Central)"}}};
+const areas = {
+  CM: '#1f77b4',
+  CO: '#ff7f0e',
+  SS: '#2ca02c',
+  IG: '#d62728',
+  RM: '#9467bd',
+  EN: '#2ca9a4'
+};
+const files = ['CM', 'CO', 'SS', 'IG', 'RM', 'EN'];
+const districtInfo = {
+  "CM16": { main: "Epping", locals: ["Theydon Bois", "North Weald", "Waltham Abbey"] },
+  "CM20": { main: "Harlow", locals: ["Town Centre", "Church Langley", "Newhall"] },
+  "CM1": { main: "Chelmsford", locals: ["Writtle", "Broomfield"] },
+  "CM2": { main: "Chelmsford", locals: ["Great Baddow", "Galleywood"] },
+  "CO1": { main: "Colchester (Central)" }
+};
 
-const essexBounds=L.latLngBounds([[51.42,-0.1],[52.19,1.25]]);
-const layerGroup=L.layerGroup().addTo(map),labelGroup=L.layerGroup().addTo(map);
-const codeLayer=new Map(),codeBounds=new Map();
-const resetBtn=document.getElementById('resetBtn');
+const essexBounds = L.latLngBounds([[51.42, -0.1], [52.19, 1.25]]);
+const layerGroup = L.layerGroup().addTo(map);
+const labelGroup = L.layerGroup().addTo(map);
+const codeLayer = new Map();
+const codeBounds = new Map();
+const resetBtn = document.getElementById('resetBtn');
 
-Promise.all(files.map(f=>fetch(`data/${f}.json`).then(r=>r.json()).then(j=>({f,j})))).then(data=>{
- data.forEach(({f,j})=>{
-  L.JSON(j,{
-   style:()=>({color:areas[f],weight:1.2,fillOpacity:.1}),
-   onEachFeature:(feature,layer)=>{
-    const code=feature.properties.name||feature.properties.postcode;
-    if(!code)return;
-    codeLayer.set(code,layer);codeBounds.set(code,layer.getBounds());
-    const c=layer.getBounds().getCenter();
-    const icon=L.divIcon({className:'pc-label',html:`<span style="color:${areas[f]}">${code}</span>`});
-    const marker=L.marker(c,{icon});
-    const info=districtInfo[code];
-    if(info)marker.bindTooltip(`${code} — ${info.main}`,{direction:'top',offset:[0,-8]});
-    marker.addTo(labelGroup);
-    layer.on('mouseover',()=>highlight(code));
-    layer.on('mouseout',()=>!locked&&clearHighlight());
-    layer.on('click',()=>toggleLock(code));
-   }
-  }).addTo(layerGroup);
- });
- buildSidebar();
- map.fitBounds(essexBounds.pad(0.05));
- map.on('zoomend',()=>document.body.classList.toggle('labels-visible',map.getZoom()>=10));
+Promise.all(
+  files.map(f =>
+    fetch(`data/${f}.json`)
+      .then(r => r.json())
+      .then(j => ({ f, j }))
+  )
+).then(data => {
+  data.forEach(({ f, j }) => {
+    L.geoJSON(j, {
+      style: () => ({ color: areas[f], weight: 1.2, fillOpacity: 0.1 }),
+      onEachFeature: (feature, layer) => {
+        const code = feature.properties.name || feature.properties.postcode;
+        if (!code) return;
+        codeLayer.set(code, layer);
+        codeBounds.set(code, layer.getBounds());
+        const c = layer.getBounds().getCenter();
+        const icon = L.divIcon({
+          className: "pc-label",
+          html: `<span style="color:${areas[f]}">${code}</span>`
+        });
+        const marker = L.marker(c, { icon });
+        const info = districtInfo[code];
+        if (info)
+          marker.bindTooltip(`${code} — ${info.main}`, {
+            direction: "top",
+            offset: [0, -8]
+          });
+        marker.addTo(labelGroup);
+        layer.on("mouseover", () => highlight(code));
+        layer.on("mouseout", () => !locked && clearHighlight());
+        layer.on("click", () => toggleLock(code));
+      }
+    }).addTo(layerGroup);
+  });
+  buildSidebar();
+  map.fitBounds(essexBounds.pad(0.05));
+  map.on("zoomend", () =>
+    document.body.classList.toggle("labels-visible", map.getZoom() >= 10)
+  );
 });
 
-let locked=null;
-function highlight(code){
- clearHighlight();
- const l=codeLayer.get(code);if(!l)return;
- const area=code.slice(0,2);l.setStyle({color:areas[area],weight:3,fillOpacity:.25});
- const item=document.querySelector(`.item[data-code="${code}"]`);if(item)item.classList.add('active');
+let locked = null;
+function highlight(code) {
+  clearHighlight();
+  const l = codeLayer.get(code);
+  if (!l) return;
+  const area = code.slice(0, 2);
+  l.setStyle({ color: areas[area], weight: 3, fillOpacity: 0.25 });
+  const item = document.querySelector(`.item[data-code="${code}"]`);
+  if (item) item.classList.add('active');
 }
-function clearHighlight(){
- codeLayer.forEach((l,c)=>{const a=c.slice(0,2);l.setStyle({color:areas[a],weight:1.2,fillOpacity:.1});});
- document.querySelectorAll('.item').forEach(i=>i.classList.remove('active'));
+function clearHighlight() {
+  codeLayer.forEach((l, c) => {
+    const a = c.slice(0, 2);
+    l.setStyle({ color: areas[a], weight: 1.2, fillOpacity: 0.1 });
+  });
+  document.querySelectorAll('.item').forEach(i => i.classList.remove('active'));
 }
-function toggleLock(code){
- if(locked===code){locked=null;resetView();}
- else{locked=code;highlight(code);if(codeBounds.has(code))map.flyToBounds(codeBounds.get(code).pad(0.05));resetBtn.style.display='block';}
+function toggleLock(code) {
+  if (locked === code) {
+    locked = null;
+    resetView();
+  } else {
+    locked = code;
+    highlight(code);
+    if (codeBounds.has(code)) map.flyToBounds(codeBounds.get(code).pad(0.05));
+    resetBtn.style.display = 'block';
+  }
 }
-function resetView(){locked=null;clearHighlight();map.flyToBounds(essexBounds.pad(0.05));resetBtn.style.display='none';}
-resetBtn.onclick=()=>resetView();
+function resetView() {
+  locked = null;
+  clearHighlight();
+  map.flyToBounds(essexBounds.pad(0.05));
+  resetBtn.style.display = 'none';
+}
+resetBtn.onclick = () => resetView();
 
-function buildSidebar(){
- const list=document.getElementById('list');
- const arr=[...codeLayer.keys()].sort();
- list.innerHTML=arr.map(c=>{
-  const d=districtInfo[c]||{};return `<div class="item" data-code="${c}">
-  <div class="pc">${c}</div>
-  <div class="mtown">${d.main||""}</div>
-  <div class="locals">${(d.locals||[]).join(', ')}</div></div>`;}).join('');
- list.onclick=e=>{const i=e.target.closest('.item');if(!i)return;toggleLock(i.dataset.code);};
- const search=document.getElementById('search');
- search.oninput=()=>{const q=search.value.toLowerCase();for(const i of list.children){i.style.display=i.textContent.toLowerCase().includes(q)?'':'none';}};
+function buildSidebar() {
+  const list = document.getElementById('list');
+  const arr = [...codeLayer.keys()].sort();
+  list.innerHTML = arr
+    .map(c => {
+      const d = districtInfo[c] || {};
+      return `<div class="item" data-code="${c}">
+        <div class="pc">${c}</div>
+        <div class="mtown">${d.main || ""}</div>
+        <div class="locals">${(d.locals || []).join(', ')}</div>
+      </div>`;
+    })
+    .join('');
+  list.onclick = e => {
+    const i = e.target.closest('.item');
+    if (!i) return;
+    toggleLock(i.dataset.code);
+  };
+  const search = document.getElementById('search');
+  search.oninput = () => {
+    const q = search.value.toLowerCase();
+    for (const i of list.children) {
+      i.style.display = i.textContent.toLowerCase().includes(q) ? '' : 'none';
+    }
+  };
 }
 </script>
 </body>
