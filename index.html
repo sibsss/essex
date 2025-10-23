@@ -7,30 +7,61 @@
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-html,body{margin:0;height:100%;width:100%}
-#app{display:grid;grid-template-columns:1fr 360px;height:100vh;width:100vw}
-#map{height:100%;width:100%}
-#sidebar{border-left:1px solid #e5e7eb;background:#fff;font:14px/1.4 "Nunito",sans-serif;display:flex;flex-direction:column}
-.side-header{padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:700}
-.search{padding:8px 14px}
-.search input{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font:inherit}
-.list{overflow:auto;flex:1;padding:4px 8px}
-.item{padding:8px 10px;border-radius:8px;cursor:pointer}
-.item:hover{background:#f3f4f6}
-.item.active{border:1px solid #9ca3af;background:#f9fafb}
-.pc{font-weight:800}
-.mtown{font-weight:600}
-.locals{font-size:12px;color:#6b7280}
-#brand{position:fixed;left:10px;bottom:55px;display:flex;align-items:center;gap:8px;z-index:1001}
-#brand img{width:70px;opacity:.4}
-#brand .credit{font:12px/1.2 "Nunito",sans-serif;color:#6b7280}
-.pc-label{font-family:"Baloo 2",sans-serif;font-weight:600;font-size:16px;
- text-shadow:0 0 3px #fff,0 0 8px #fff;opacity:0;transition:opacity .3s}
-body.labels-visible .pc-label{opacity:1}
-#resetBtn{position:fixed;bottom:20px;right:20px;background:#fff;border:1px solid #d1d5db;
-border-radius:8px;padding:6px 10px;font:13px "Nunito",sans-serif;cursor:pointer;
-box-shadow:0 1px 4px rgba(0,0,0,.1);display:none}
-#resetBtn:hover{background:#f3f4f6}
+/* Sidebar layout improvement */
+#sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: 290px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: -4px 0 10px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem;
+  z-index: 1000;
+  backdrop-filter: blur(6px);
+  transition: background 0.4s ease, transform 0.3s ease;
+}
+
+/* Smooth scroll for long lists */
+#list {
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  padding-right: 4px;
+}
+
+/* Scrollbar style (subtle and modern) */
+#list::-webkit-scrollbar {
+  width: 6px;
+}
+#list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+#list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Search box style */
+#search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  margin-bottom: 1rem;
+  font-family: 'Nunito', sans-serif;
+}
+
+/* Fix map area when sidebar exists */
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 290px;
+  bottom: 0;
+}
 </style>
 </head>
 <body>
