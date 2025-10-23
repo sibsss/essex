@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Essex Postcode Districts – The Learning Hive</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+html,body{margin:0;height:100%;width:100%}
+#app{display:grid;grid-template-columns:1fr 360px;height:100vh;width:100vw}
+#map{height:100%;width:100%}
+#sidebar{border-left:1px solid #e5e7eb;background:#fff;font:14px/1.4 "Nunito",sans-serif;display:flex;flex-direction:column}
+.side-header{padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:700}
+.search{padding:8px 14px}
+.search input{width:100%;padding:8px;border:1px solid #d1d5db;border-radius:8px;font:inherit}
+.list{overflow:auto;flex:1;padding:4px 8px}
+.item{padding:8px 10px;border-radius:8px;cursor:pointer}
+.item:hover{background:#f3f4f6}
+.item.active{border:1px solid #9ca3af;background:#f9fafb}
+.pc{font-weight:800}
+.mtown{font-weight:600}
+.locals{font-size:12px;color:#6b7280}
+#brand{position:fixed;left:10px;bottom:55px;display:flex;align-items:center;gap:8px;z-index:1001}
+#brand img{width:70px;opacity:.4}
+#brand .credit{font:12px/1.2 "Nunito",sans-serif;color:#6b7280}
+.pc-label{font-family:"Baloo 2",sans-serif;font-weight:600;font-size:16px;
+ text-shadow:0 0 3px #fff,0 0 8px #fff;opacity:0;transition:opacity .3s}
+body.labels-visible .pc-label{opacity:1}
+#resetBtn{position:fixed;bottom:20px;right:20px;background:#fff;border:1px solid #d1d5db;
+border-radius:8px;padding:6px 10px;font:13px "Nunito",sans-serif;cursor:pointer;
+box-shadow:0 1px 4px rgba(0,0,0,.1);display:none}
+#resetBtn:hover{background:#f3f4f6}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="map"></div>
+  <aside id="sidebar">
+    <div class="side-header">Essex Postcode Districts</div>
+    <div class="search"><input id="search" placeholder="Filter by postcode or place…"></div>
+    <div id="list" class="list"></div>
+  </aside>
+</div>
+<div id="brand">
+  <img src="https://raw.githubusercontent.com/github/explore/main/topics/leaflet/leaflet.png" alt="Learning Hive Logo">
+  <div class="credit">© The Learning Hive 2025</div>
+</div>
+<button id="resetBtn">Reset View</button>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map').setView([51.77,0.54],9);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+
+const areas={CM:'#1f77b4',CO:'#ff7f0e',SS:'#2ca02c',IG:'#d62728',RM:'#9467bd',EN:'#2ca9a4'};
+const files=['CM','CO','SS','IG','RM','EN'];
+const districtInfo={{"CM16":{main:"Epping",locals:["Theydon Bois","North Weald","Waltham Abbey"]},"CM20":{main:"Harlow",locals:["Town Centre","Church Langley","Newhall"]},"CM1":{main:"Chelmsford",locals:["Writtle","Broomfield"]},"CM2":{main:"Chelmsford",locals:["Great Baddow","Galleywood"]},"CO1":{main:"Colchester (Central)"}}};
+
+const essexBounds=L.latLngBounds([[51.42,-0.1],[52.19,1.25]]);
+const layerGroup=L.layerGroup().addTo(map),labelGroup=L.layerGroup().addTo(map);
+const codeLayer=new Map(),codeBounds=new Map();
+const resetBtn=document.getElementById('resetBtn');
+
+Promise.all(files.map(f=>fetch(`data/${f}.geojson`).then(r=>r.json()).then(j=>({f,j})))).then(data=>{
+ data.forEach(({f,j})=>{
+  L.geoJSON(j,{
+   style:()=>({color:areas[f],weight:1.2,fillOpacity:.1}),
+   onEachFeature:(feature,layer)=>{
+    const code=feature.properties.name||feature.properties.postcode;
+    if(!code)return;
+    codeLayer.set(code,layer);codeBounds.set(code,layer.getBounds());
+    const c=layer.getBounds().getCenter();
+    const icon=L.divIcon({className:'pc-label',html:`<span style="color:${areas[f]}">${code}</span>`});
+    const marker=L.marker(c,{icon});
+    const info=districtInfo[code];
+    if(info)marker.bindTooltip(`${code} — ${info.main}`,{direction:'top',offset:[0,-8]});
+    marker.addTo(labelGroup);
+    layer.on('mouseover',()=>highlight(code));
+    layer.on('mouseout',()=>!locked&&clearHighlight());
+    layer.on('click',()=>toggleLock(code));
+   }
+  }).addTo(layerGroup);
+ });
+ buildSidebar();
+ map.fitBounds(essexBounds.pad(0.05));
+ map.on('zoomend',()=>document.body.classList.toggle('labels-visible',map.getZoom()>=10));
+});
+
+let locked=null;
+function highlight(code){
+ clearHighlight();
+ const l=codeLayer.get(code);if(!l)return;
+ const area=code.slice(0,2);l.setStyle({color:areas[area],weight:3,fillOpacity:.25});
+ const item=document.querySelector(`.item[data-code="${code}"]`);if(item)item.classList.add('active');
+}
+function clearHighlight(){
+ codeLayer.forEach((l,c)=>{const a=c.slice(0,2);l.setStyle({color:areas[a],weight:1.2,fillOpacity:.1});});
+ document.querySelectorAll('.item').forEach(i=>i.classList.remove('active'));
+}
+function toggleLock(code){
+ if(locked===code){locked=null;resetView();}
+ else{locked=code;highlight(code);if(codeBounds.has(code))map.flyToBounds(codeBounds.get(code).pad(0.05));resetBtn.style.display='block';}
+}
+function resetView(){locked=null;clearHighlight();map.flyToBounds(essexBounds.pad(0.05));resetBtn.style.display='none';}
+resetBtn.onclick=()=>resetView();
+
+function buildSidebar(){
+ const list=document.getElementById('list');
+ const arr=[...codeLayer.keys()].sort();
+ list.innerHTML=arr.map(c=>{
+  const d=districtInfo[c]||{};return `<div class="item" data-code="${c}">
+  <div class="pc">${c}</div>
+  <div class="mtown">${d.main||""}</div>
+  <div class="locals">${(d.locals||[]).join(', ')}</div></div>`;}).join('');
+ list.onclick=e=>{const i=e.target.closest('.item');if(!i)return;toggleLock(i.dataset.code);};
+ const search=document.getElementById('search');
+ search.oninput=()=>{const q=search.value.toLowerCase();for(const i of list.children){i.style.display=i.textContent.toLowerCase().includes(q)?'':'none';}};
+}
+</script>
+</body>
+</html>
