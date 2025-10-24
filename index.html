@@ -153,7 +153,6 @@ const areas={CM:'#1f77b4',CO:'#ff7f0e',SS:'#2ca02c',IG:'#d62728',RM:'#9467bd',EN
 const files=['CM','CO','SS','IG','RM','EN'];
 
 const districtInfo = {
-  // --- CM ---
   "CM0": { main: "Burnham-on-Crouch" },
   "CM1": { main: "Chelmsford (North)" },
   "CM2": { main: "Chelmsford (South)" },
@@ -178,8 +177,6 @@ const districtInfo = {
   "CM22": { main: "Takeley" },
   "CM23": { main: "Bishop’s Stortford" },
   "CM24": { main: "Stansted Mountfitchet" },
-
-  // --- CO ---
   "CO1": { main: "Colchester (Central)" },
   "CO2": { main: "Colchester (South)" },
   "CO3": { main: "Colchester (West)" },
@@ -196,8 +193,6 @@ const districtInfo = {
   "CO14": { main: "Walton-on-the-Naze" },
   "CO15": { main: "Clacton-on-Sea" },
   "CO16": { main: "Little Clacton" },
-
-  // --- SS ---
   "SS0": { main: "Westcliff-on-Sea" },
   "SS1": { main: "Southend-on-Sea" },
   "SS2": { main: "Prittlewell" },
@@ -215,8 +210,6 @@ const districtInfo = {
   "SS15": { main: "Laindon" },
   "SS16": { main: "Langdon Hills" },
   "SS17": { main: "Stanford-le-Hope" },
-
-  // --- IG ---
   "IG1": { main: "Ilford" },
   "IG2": { main: "Gants Hill" },
   "IG3": { main: "Seven Kings" },
@@ -228,8 +221,6 @@ const districtInfo = {
   "IG9": { main: "Buckhurst Hill" },
   "IG10": { main: "Loughton" },
   "IG11": { main: "Barking" },
-
-  // --- RM ---
   "RM1": { main: "Romford (Central)" },
   "RM2": { main: "Gidea Park" },
   "RM3": { main: "Harold Wood" },
@@ -250,8 +241,6 @@ const districtInfo = {
   "RM18": { main: "East Tilbury" },
   "RM19": { main: "Purfleet-on-Thames" },
   "RM20": { main: "West Thurrock" },
-
-  // --- EN ---
   "EN1": { main: "Enfield (Central)" },
   "EN2": { main: "Enfield (North)" },
   "EN3": { main: "Enfield Lock" },
@@ -264,12 +253,6 @@ const districtInfo = {
   "EN10": { main: "Broxbourne" },
   "EN11": { main: "Hoddesdon" }
 };
-
-function guessTown(code){
-  const base=code.slice(0,2);
-  const map={CM:"Chelmsford / Harlow / Braintree",CO:"Colchester",SS:"Southend-on-Sea",IG:"Loughton / Chigwell / Buckhurst Hill",RM:"Romford / Upminster",EN:"Waltham Abbey / Epping"};
-  return map[base]||"Essex District";
-}
 
 const essexBounds=L.latLngBounds([[51.42,-0.1],[52.19,1.25]]);
 const layerGroup=L.layerGroup().addTo(map);
@@ -284,17 +267,17 @@ Promise.all(files.map(f=>fetch(`data/${f}.json`).then(r=>r.json()).then(j=>({f,j
       onEachFeature:(feature,layer)=>{
         const code=feature.properties.name||feature.properties.postcode;
         if(!code)return;
-        const info=districtInfo[code]||{main:guessTown(code)};
+        const info=districtInfo[code]||{};
         const centroid=turf.centerOfMass(feature).geometry.coordinates.reverse();
         codeLayer.set(code,layer);
         codeBounds.set(code,layer.getBounds());
         const icon=L.divIcon({
           className:"pc-label",
-          html:`<span style="color:${areas[f]}">${code}<br><small>${info.main}</small></span>`
+          html:`<span style="color:${areas[f]}">${code}<br><small>${info.main||""}</small></span>`
         });
         const marker=L.marker(centroid,{icon});
         marker.addTo(labelGroup);
-        marker.bindTooltip(`${code} — ${info.main}`,{direction:"top",offset:[0,-8]});
+        marker.bindTooltip(`${code} — ${info.main||""}`,{direction:"top",offset:[0,-8]});
         layer.on("mouseover",()=>highlight(code));
         layer.on("mouseout",()=>!locked&&clearHighlight());
         layer.on("click",()=>toggleLock(code));
@@ -341,11 +324,11 @@ function buildSidebar(){
   const list=document.getElementById('list');
   const arr=[...codeLayer.keys()].sort();
   list.innerHTML=arr.map(c=>{
-    const d=districtInfo[c]||{main:guessTown(c)};
+    const d=districtInfo[c]||{};
     const areaColor=areas[c.slice(0,2)]||'#ccc';
     return `<div class="item" data-code="${c}" style="--area:${areaColor}">
       <div class="pc">${c}</div>
-      <div class="mtown">${d.main}</div>
+      <div class="mtown">${d.main||""}</div>
     </div>`;
   }).join('');
   list.onclick=e=>{
