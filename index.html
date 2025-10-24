@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Essex Postcode Districts – The Learning Hive</title>
-<link href="https://fonts.googleapis.com/css2?family=Balloo+2:wght@600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <style>
@@ -34,7 +35,7 @@ html,body {
   z-index:1000;
 }
 #sidebar h2{
-  font-family:'Balloo 2',sans-serif;
+  font-family:'Baloo 2',sans-serif;
   font-size:1.3rem;
   margin:0 0 .75rem 0;
 }
@@ -50,11 +51,6 @@ html,body {
   overflow-y:auto;
   scroll-behavior:smooth;
 }
-#list::-webkit-scrollbar{width:6px;}
-#list::-webkit-scrollbar-thumb{
-  background:rgba(0,0,0,0.15);
-  border-radius:4px;
-}
 .item{
   padding:0.4rem 0.5rem;
   margin-bottom:0.3rem;
@@ -62,13 +58,8 @@ html,body {
   transition:background 0.2s ease,transform 0.15s ease;
   cursor:pointer;
 }
-.item:hover{
-  background:rgba(0,0,0,0.05);
-  transform:translateX(-2px);
-}
-.item.active{
-  background:rgba(100,100,255,0.15);
-}
+.item:hover{background:rgba(0,0,0,0.05);transform:translateX(-2px);}
+.item.active{background:rgba(100,100,255,0.15);}
 .pc{font-weight:600;}
 .mtown{font-size:0.9rem;color:#444;}
 .locals{font-size:0.8rem;color:#777;}
@@ -90,9 +81,12 @@ html,body {
 
 /* Map labels */
 .pc-label span{
+  font-family:'Baloo 2',cursive;
   font-size:0.9rem;
   font-weight:600;
   text-shadow:0 0 4px rgba(255,255,255,0.8);
+  display:inline-block;
+  text-align:center;
 }
 
 /* Footer credit & logo */
@@ -112,6 +106,18 @@ html,body {
   width:auto;
   opacity:0.85;
 }
+
+/* Mobile */
+@media(max-width:768px){
+  #map{right:0;}
+  #sidebar{
+    width:100%;
+    height:40%;
+    top:auto;
+    bottom:0;
+    border-top:1px solid #ddd;
+  }
+}
 </style>
 </head>
 
@@ -130,19 +136,17 @@ html,body {
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 <script>
 const map = L.map('map',{
-  minZoom:8,
-  maxZoom:14,
+  minZoom:8,maxZoom:14,
   maxBounds:L.latLngBounds([[51.35,-0.5],[52.2,1.5]]),
   maxBoundsViscosity:1.0,
-  inertia:true,
-  inertiaDeceleration:2000
+  inertia:true,inertiaDeceleration:2000
 }).setView([51.77,0.54],9);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-  maxZoom:19,
-  attribution:'© OpenStreetMap'
+  maxZoom:19,attribution:'© OpenStreetMap'
 }).addTo(map);
 
 const areas={CM:'#1f77b4',CO:'#ff7f0e',SS:'#2ca02c',IG:'#d62728',RM:'#9467bd',EN:'#2ca9a4'};
@@ -263,51 +267,32 @@ const districtInfo = {
 
 function guessTown(code){
   const base=code.slice(0,2);
-  const map={
-    CM:"Chelmsford / Harlow / Braintree",
-    CO:"Colchester",
-    SS:"Southend-on-Sea",
-    IG:"Loughton / Chigwell / Buckhurst Hill",
-    RM:"Romford / Upminster",
-    EN:"Waltham Abbey / Epping"
-  };
+  const map={CM:"Chelmsford / Harlow / Braintree",CO:"Colchester",SS:"Southend-on-Sea",IG:"Loughton / Chigwell / Buckhurst Hill",RM:"Romford / Upminster",EN:"Waltham Abbey / Epping"};
   return map[base]||"Essex District";
 }
 
 const essexBounds=L.latLngBounds([[51.42,-0.1],[52.19,1.25]]);
 const layerGroup=L.layerGroup().addTo(map);
 const labelGroup=L.layerGroup().addTo(map);
-const codeLayer=new Map();
-const codeBounds=new Map();
+const codeLayer=new Map(),codeBounds=new Map();
 const resetBtn=document.getElementById('resetBtn');
 
-Promise.all(
-  files.map(f=>fetch(`data/${f}.json`).then(r=>r.json()).then(j=>({f,j})))
-).then(data=>{
+Promise.all(files.map(f=>fetch(`data/${f}.json`).then(r=>r.json()).then(j=>({f,j})))).then(data=>{
   data.forEach(({f,j})=>{
     L.geoJSON(j,{
       style:()=>({color:areas[f],weight:1.2,fillOpacity:0.1}),
       onEachFeature:(feature,layer)=>{
         const code=feature.properties.name||feature.properties.postcode;
         if(!code)return;
-
-        // auto town detection
-        let info=districtInfo[code];
-        if(!info){
-          const match=Object.values(districtInfo).find(d=>
-            (d.locals||[]).some(n=>code.toLowerCase().includes(n.toLowerCase().slice(0,3)))
-          );
-          info=match||{main:guessTown(code),locals:[]};
-        }
-
+        const info=districtInfo[code]||{main:guessTown(code)};
+        const centroid=turf.centerOfMass(feature).geometry.coordinates.reverse();
         codeLayer.set(code,layer);
         codeBounds.set(code,layer.getBounds());
-        const c=layer.getBounds().getCenter();
         const icon=L.divIcon({
           className:"pc-label",
           html:`<span style="color:${areas[f]}">${code}<br><small>${info.main}</small></span>`
         });
-        const marker=L.marker(c,{icon});
+        const marker=L.marker(centroid,{icon});
         marker.addTo(labelGroup);
         marker.bindTooltip(`${code} — ${info.main}`,{direction:"top",offset:[0,-8]});
         layer.on("mouseover",()=>highlight(code));
@@ -318,7 +303,6 @@ Promise.all(
   });
   buildSidebar();
   map.flyToBounds(essexBounds.pad(0.05),{duration:2});
-  map.on("zoomend",()=>document.body.classList.toggle("labels-visible",map.getZoom()>=10));
 });
 
 let locked=null;
@@ -357,18 +341,16 @@ function buildSidebar(){
   const list=document.getElementById('list');
   const arr=[...codeLayer.keys()].sort();
   list.innerHTML=arr.map(c=>{
-    const d=districtInfo[c]||{main:guessTown(c),locals:[]};
+    const d=districtInfo[c]||{main:guessTown(c)};
     const areaColor=areas[c.slice(0,2)]||'#ccc';
     return `<div class="item" data-code="${c}" style="--area:${areaColor}">
       <div class="pc">${c}</div>
       <div class="mtown">${d.main}</div>
-      <div class="locals">${(d.locals||[]).join(', ')}</div>
     </div>`;
   }).join('');
   list.onclick=e=>{
     const i=e.target.closest('.item');
-    if(!i)return;
-    toggleLock(i.dataset.code);
+    if(i)toggleLock(i.dataset.code);
   };
   const search=document.getElementById('search');
   search.oninput=()=>{
@@ -378,16 +360,6 @@ function buildSidebar(){
     }
   };
 }
-
-/* Sidebar colour hover effect */
-document.addEventListener('mouseover',e=>{
-  const i=e.target.closest('.item');
-  if(i)i.style.background=`color-mix(in srgb, var(--area) 20%, white)`;
-});
-document.addEventListener('mouseout',e=>{
-  const i=e.target.closest('.item');
-  if(i)i.style.background='';
-});
 </script>
 </body>
 </html>
