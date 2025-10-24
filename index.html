@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Essex Postcode Districts – The Learning Hive</title>
 
+<!-- Fonts & Leaflet -->
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -16,105 +17,75 @@ html,body {
   overflow:hidden;
   background:#f7f7f7;
 }
-#map {
-  position:absolute;
-  top:0;left:0;bottom:0;right:290px;
-  z-index:1;
-}
+#map { position:absolute; top:0; left:0; bottom:0; right:290px; z-index:1; }
 
 /* Sidebar */
 #sidebar {
-  position:fixed;
-  top:0;right:0;
-  width:290px;height:100%;
+  position:fixed; top:0; right:0;
+  width:290px; height:100%;
   background:rgba(255,255,255,0.95);
   box-shadow:-4px 0 10px rgba(0,0,0,0.1);
   backdrop-filter:blur(6px);
-  overflow-y:auto;
-  padding:1rem;
-  z-index:1000;
+  overflow-y:auto; padding:1rem; z-index:1000;
 }
-#sidebar h2{
+#sidebar h2 {
   font-family:'Baloo 2',sans-serif;
-  font-size:1.3rem;
-  margin:0 0 .75rem 0;
+  font-size:1.3rem; margin:0 0 .75rem 0;
 }
-#search{
-  width:100%;
-  padding:0.5rem 0.75rem;
-  border-radius:8px;
-  border:1px solid #ddd;
+#search {
+  width:100%; padding:0.5rem 0.75rem;
+  border-radius:8px; border:1px solid #ddd;
   margin-bottom:1rem;
 }
-#list{
+#list {
   max-height:calc(100vh - 120px);
-  overflow-y:auto;
-  scroll-behavior:smooth;
+  overflow-y:auto; scroll-behavior:smooth;
 }
-.item{
-  padding:0.4rem 0.5rem;
-  margin-bottom:0.3rem;
-  border-radius:6px;
+.item {
+  padding:0.4rem 0.5rem; margin-bottom:0.3rem;
+  border-radius:6px; cursor:pointer;
   transition:background 0.2s ease,transform 0.15s ease;
-  cursor:pointer;
 }
-.item:hover{background:rgba(0,0,0,0.05);transform:translateX(-2px);}
-.item.active{background:rgba(100,100,255,0.15);}
+.item:hover { background:rgba(0,0,0,0.05); transform:translateX(-2px); }
+.item.active { background:rgba(100,100,255,0.15); }
 .pc{font-weight:600;}
 .mtown{font-size:0.9rem;color:#444;}
-.locals{font-size:0.8rem;color:#777;}
 
 /* Reset button */
-#resetBtn{
-  position:fixed;
-  bottom:15px;
-  right:310px;
-  z-index:1200;
-  background:#fff;
-  border:1px solid #ccc;
-  padding:6px 12px;
-  border-radius:8px;
-  cursor:pointer;
-  display:none;
-  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+#resetBtn {
+  position:fixed; bottom:15px; right:310px;
+  z-index:1200; background:#fff;
+  border:1px solid #ccc; padding:6px 12px;
+  border-radius:8px; cursor:pointer;
+  display:none; box-shadow:0 2px 6px rgba(0,0,0,0.15);
 }
 
 /* Map labels */
-.pc-label span{
+.pc-label span {
   font-family:'Baloo 2',cursive;
-  font-size:0.9rem;
-  font-weight:600;
+  font-size:0.9rem; font-weight:600;
   text-shadow:0 0 4px rgba(255,255,255,0.8);
-  display:inline-block;
-  text-align:center;
+  text-align:center; display:inline-block;
 }
 
-/* Footer credit & logo */
-.footer{
-  position:fixed;
-  bottom:10px;
-  left:10px;
-  font-size:0.75rem;
-  color:#666;
-  display:flex;
-  align-items:center;
-  gap:6px;
-  opacity:0.8;
-}
-.footer img{
-  height:22px;
-  width:auto;
+/* Footer */
+.footer {
+  position:fixed; bottom:10px; left:10px;
+  font-size:0.75rem; color:#666;
+  display:flex; align-items:center; gap:6px;
   opacity:0.85;
+}
+.footer img {
+  height:28px; width:auto; opacity:0.85;
+  border-radius:6px;
 }
 
 /* Mobile */
 @media(max-width:768px){
   #map{right:0;}
   #sidebar{
-    width:100%;
-    height:40%;
-    top:auto;
-    bottom:0;
+    width:100%; height:40%;
+    top:auto; bottom:0;
     border-top:1px solid #ddd;
   }
 }
@@ -123,22 +94,26 @@ html,body {
 
 <body>
 <div id="map"></div>
+
 <div id="sidebar">
   <h2>Essex Postcode Districts</h2>
   <input id="search" type="text" placeholder="Filter by postcode or place...">
   <div id="list"></div>
 </div>
+
 <button id="resetBtn">Reset View</button>
 
 <div class="footer">
-  <img src="https://raw.githubusercontent.com/sibsss/essex/main/learninghive-logo.png" alt="Learning Hive Logo">
+  <img src="learning-hive-logo.png" alt="Learning Hive Logo">
   © The Learning Hive 2025
 </div>
 
+<!-- Scripts -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
 <script>
-const map = L.map('map',{
+const map=L.map('map',{
   minZoom:8,maxZoom:14,
   maxBounds:L.latLngBounds([[51.35,-0.5],[52.2,1.5]]),
   maxBoundsViscosity:1.0,
@@ -152,106 +127,38 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
 const areas={CM:'#1f77b4',CO:'#ff7f0e',SS:'#2ca02c',IG:'#d62728',RM:'#9467bd',EN:'#2ca9a4'};
 const files=['CM','CO','SS','IG','RM','EN'];
 
-const districtInfo = {
-  "CM0": { main: "Burnham-on-Crouch" },
-  "CM1": { main: "Chelmsford (North)" },
-  "CM2": { main: "Chelmsford (South)" },
-  "CM3": { main: "South Woodham Ferrers" },
-  "CM4": { main: "Ingatestone" },
-  "CM5": { main: "Ongar" },
-  "CM6": { main: "Great Dunmow" },
-  "CM7": { main: "Braintree" },
-  "CM8": { main: "Witham" },
-  "CM9": { main: "Maldon" },
-  "CM11": { main: "Billericay" },
-  "CM12": { main: "Billericay (West)" },
-  "CM13": { main: "Brentwood" },
-  "CM14": { main: "Brentwood (Centre)" },
-  "CM15": { main: "Shenfield" },
-  "CM16": { main: "Epping" },
-  "CM17": { main: "Old Harlow" },
-  "CM18": { main: "Harlow (South)" },
-  "CM19": { main: "Harlow (West)" },
-  "CM20": { main: "Harlow (Town Centre)" },
-  "CM21": { main: "Sawbridgeworth" },
-  "CM22": { main: "Takeley" },
-  "CM23": { main: "Bishop’s Stortford" },
-  "CM24": { main: "Stansted Mountfitchet" },
-  "CO1": { main: "Colchester (Central)" },
-  "CO2": { main: "Colchester (South)" },
-  "CO3": { main: "Colchester (West)" },
-  "CO4": { main: "Colchester (North)" },
-  "CO5": { main: "Tiptree" },
-  "CO6": { main: "Marks Tey" },
-  "CO7": { main: "Halstead" },
-  "CO8": { main: "Earls Colne" },
-  "CO9": { main: "Sible Hedingham" },
-  "CO10": { main: "Sudbury" },
-  "CO11": { main: "Manningtree" },
-  "CO12": { main: "Harwich" },
-  "CO13": { main: "Frinton-on-Sea" },
-  "CO14": { main: "Walton-on-the-Naze" },
-  "CO15": { main: "Clacton-on-Sea" },
-  "CO16": { main: "Little Clacton" },
-  "SS0": { main: "Westcliff-on-Sea" },
-  "SS1": { main: "Southend-on-Sea" },
-  "SS2": { main: "Prittlewell" },
-  "SS3": { main: "Shoeburyness" },
-  "SS4": { main: "Rochford" },
-  "SS5": { main: "Hockley" },
-  "SS6": { main: "Rayleigh" },
-  "SS7": { main: "Benfleet" },
-  "SS8": { main: "Canvey Island" },
-  "SS9": { main: "Leigh-on-Sea" },
-  "SS11": { main: "Wickford" },
-  "SS12": { main: "Wickford (North)" },
-  "SS13": { main: "Basildon (Pipps Hill)" },
-  "SS14": { main: "Basildon (Central)" },
-  "SS15": { main: "Laindon" },
-  "SS16": { main: "Langdon Hills" },
-  "SS17": { main: "Stanford-le-Hope" },
-  "IG1": { main: "Ilford" },
-  "IG2": { main: "Gants Hill" },
-  "IG3": { main: "Seven Kings" },
-  "IG4": { main: "Redbridge" },
-  "IG5": { main: "Clayhall" },
-  "IG6": { main: "Barkingside" },
-  "IG7": { main: "Chigwell" },
-  "IG8": { main: "Woodford Green" },
-  "IG9": { main: "Buckhurst Hill" },
-  "IG10": { main: "Loughton" },
-  "IG11": { main: "Barking" },
-  "RM1": { main: "Romford (Central)" },
-  "RM2": { main: "Gidea Park" },
-  "RM3": { main: "Harold Wood" },
-  "RM4": { main: "Abridge" },
-  "RM5": { main: "Collier Row" },
-  "RM6": { main: "Chadwell Heath" },
-  "RM7": { main: "Rush Green" },
-  "RM8": { main: "Dagenham" },
-  "RM9": { main: "Becontree" },
-  "RM10": { main: "Dagenham (East)" },
-  "RM11": { main: "Hornchurch" },
-  "RM12": { main: "Elm Park" },
-  "RM13": { main: "Rainham" },
-  "RM14": { main: "Upminster" },
-  "RM15": { main: "South Ockendon" },
-  "RM16": { main: "Grays" },
-  "RM17": { main: "Tilbury" },
-  "RM18": { main: "East Tilbury" },
-  "RM19": { main: "Purfleet-on-Thames" },
-  "RM20": { main: "West Thurrock" },
-  "EN1": { main: "Enfield (Central)" },
-  "EN2": { main: "Enfield (North)" },
-  "EN3": { main: "Enfield Lock" },
-  "EN4": { main: "Barnet (East)" },
-  "EN5": { main: "High Barnet" },
-  "EN6": { main: "Potters Bar" },
-  "EN7": { main: "Cheshunt" },
-  "EN8": { main: "Waltham Cross" },
-  "EN9": { main: "Waltham Abbey" },
-  "EN10": { main: "Broxbourne" },
-  "EN11": { main: "Hoddesdon" }
+const districtInfo={
+  "CM0":{main:"Burnham-on-Crouch"},"CM1":{main:"Chelmsford (North)"},"CM2":{main:"Chelmsford (South)"},
+  "CM3":{main:"South Woodham Ferrers"},"CM4":{main:"Ingatestone"},"CM5":{main:"Ongar"},
+  "CM6":{main:"Great Dunmow"},"CM7":{main:"Braintree"},"CM8":{main:"Witham"},"CM9":{main:"Maldon"},
+  "CM11":{main:"Billericay"},"CM12":{main:"Billericay (West)"},"CM13":{main:"Brentwood"},
+  "CM14":{main:"Brentwood (Centre)"},"CM15":{main:"Shenfield"},"CM16":{main:"Epping"},
+  "CM17":{main:"Old Harlow"},"CM18":{main:"Harlow (South)"},"CM19":{main:"Harlow (West)"},
+  "CM20":{main:"Harlow (Town Centre)"},"CM21":{main:"Sawbridgeworth"},"CM22":{main:"Takeley"},
+  "CM23":{main:"Bishop’s Stortford"},"CM24":{main:"Stansted Mountfitchet"},
+  "CO1":{main:"Colchester (Central)"},"CO2":{main:"Colchester (South)"},"CO3":{main:"Colchester (West)"},
+  "CO4":{main:"Colchester (North)"},"CO5":{main:"Tiptree"},"CO6":{main:"Marks Tey"},"CO7":{main:"Halstead"},
+  "CO8":{main:"Earls Colne"},"CO9":{main:"Sible Hedingham"},"CO10":{main:"Sudbury"},
+  "CO11":{main:"Manningtree"},"CO12":{main:"Harwich"},"CO13":{main:"Frinton-on-Sea"},
+  "CO14":{main:"Walton-on-the-Naze"},"CO15":{main:"Clacton-on-Sea"},"CO16":{main:"Little Clacton"},
+  "SS0":{main:"Westcliff-on-Sea"},"SS1":{main:"Southend-on-Sea"},"SS2":{main:"Prittlewell"},
+  "SS3":{main:"Shoeburyness"},"SS4":{main:"Rochford"},"SS5":{main:"Hockley"},"SS6":{main:"Rayleigh"},
+  "SS7":{main:"Benfleet"},"SS8":{main:"Canvey Island"},"SS9":{main:"Leigh-on-Sea"},
+  "SS11":{main:"Wickford"},"SS12":{main:"Wickford (North)"},"SS13":{main:"Basildon (Pipps Hill)"},
+  "SS14":{main:"Basildon (Central)"},"SS15":{main:"Laindon"},"SS16":{main:"Langdon Hills"},
+  "SS17":{main:"Stanford-le-Hope"},"IG1":{main:"Ilford"},"IG2":{main:"Gants Hill"},
+  "IG3":{main:"Seven Kings"},"IG4":{main:"Redbridge"},"IG5":{main:"Clayhall"},"IG6":{main:"Barkingside"},
+  "IG7":{main:"Chigwell"},"IG8":{main:"Woodford Green"},"IG9":{main:"Buckhurst Hill"},
+  "IG10":{main:"Loughton"},"IG11":{main:"Barking"},"RM1":{main:"Romford (Central)"},
+  "RM2":{main:"Gidea Park"},"RM3":{main:"Harold Wood"},"RM4":{main:"Abridge"},"RM5":{main:"Collier Row"},
+  "RM6":{main:"Chadwell Heath"},"RM7":{main:"Rush Green"},"RM8":{main:"Dagenham"},"RM9":{main:"Becontree"},
+  "RM10":{main:"Dagenham (East)"},"RM11":{main:"Hornchurch"},"RM12":{main:"Elm Park"},
+  "RM13":{main:"Rainham"},"RM14":{main:"Upminster"},"RM15":{main:"South Ockendon"},"RM16":{main:"Grays"},
+  "RM17":{main:"Tilbury"},"RM18":{main:"East Tilbury"},"RM19":{main:"Purfleet-on-Thames"},
+  "RM20":{main:"West Thurrock"},"EN1":{main:"Enfield (Central)"},"EN2":{main:"Enfield (North)"},
+  "EN3":{main:"Enfield Lock"},"EN4":{main:"Barnet (East)"},"EN5":{main:"High Barnet"},
+  "EN6":{main:"Potters Bar"},"EN7":{main:"Cheshunt"},"EN8":{main:"Waltham Cross"},
+  "EN9":{main:"Waltham Abbey"},"EN10":{main:"Broxbourne"},"EN11":{main:"Hoddesdon"}
 };
 
 const essexBounds=L.latLngBounds([[51.42,-0.1],[52.19,1.25]]);
