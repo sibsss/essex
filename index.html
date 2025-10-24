@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<meta name="theme-color" content="#ffffff" />
 <title>Essex Postcode Districts – The Learning Hive</title>
 
-<!-- Favicon (uses your logo.png) -->
-<link rel="icon" type="image/png" href="logo.png" />
+<!-- Favicon (logo2.png) -->
+<link rel="icon" type="image/png" href="logo2.png?v=1" />
+<link rel="shortcut icon" href="logo2.png?v=1" />
+<link rel="apple-touch-icon" href="logo2.png?v=1" />
 
 <!-- Fonts & Leaflet -->
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600&family=Nunito:wght@400;600&display=swap" rel="stylesheet" />
@@ -18,11 +19,11 @@
     margin: 0;
     height: 100%;
     font-family: 'Nunito', sans-serif;
-    overflow: hidden; /* lock page scroll */
+    overflow: hidden;                 /* lock page scroll */
     background: #f7f7f7;
   }
 
-  /* Desktop layout: map left, sidebar right */
+  /* Desktop: map left, sidebar right */
   #map {
     position: absolute;
     top: 0; left: 0; bottom: 0; right: 300px;
@@ -45,7 +46,7 @@
     font-family: 'Baloo 2', cursive;
     font-size: 1.3rem;
     margin: 0 0 .75rem 0;
-    text-align: center;   /* centred title */
+    text-align: center;               /* centered title */
   }
 
   #search {
@@ -59,9 +60,9 @@
 
   #list {
     flex: 1;
-    overflow-y: auto;      /* list scrolls, not the page */
+    overflow-y: auto;                 /* the list scrolls (not the page) */
     scroll-behavior: smooth;
-    text-align: center;    /* centred items */
+    text-align: center;               /* centered items */
   }
 
   .item {
@@ -71,9 +72,10 @@
     cursor: pointer;
     transition: background .2s ease, transform .15s ease;
   }
-  .item:hover { background: rgba(0,0,0,.05); transform: translateX(-2px); }
+  .item:hover  { background: rgba(0,0,0,.05); transform: translateX(-2px); }
   .item.active { background: rgba(100,100,255,.15); }
-  .pc { font-weight: 700; font-size: 1.05rem; }
+
+  .pc    { font-weight: 700; font-size: 1.05rem; }
   .mtown { font-size: .92rem; color: #444; }
 
   /* Reset button */
@@ -98,34 +100,34 @@
     font-weight: 600;
     text-align: center;
     display: inline-block;
+    line-height: 1.15;
     text-shadow:
       0 0 3px #fff,
-      0 0 6px #fff; /* subtle halo for readability */
-    line-height: 1.15;
+      0 0 6px #fff;                   /* soft halo for readability */
   }
 
-  /* Fixed logo bottom-left */
+  /* On-map brand logo */
   .footer-logo {
     position: fixed;
     left: 10px; bottom: 10px;
     width: 64px; height: auto;
-    opacity: .88;           /* semi-transparent */
+    opacity: .88;                     /* semi-transparent */
     z-index: 1200;
-    pointer-events: none;   /* never blocks map taps */
+    pointer-events: none;             /* never blocks map taps */
   }
 
-  /* Mobile: map top 60%, sidebar bottom 40% (locked), centred text */
+  /* Mobile: map fixed at top (60%), sidebar fixed at bottom (40%), centered text */
   @media (max-width: 768px) {
     #map {
       position: fixed;
       top: 0; left: 0; right: 0;
-      height: 60vh;         /* map height locked */
+      height: 60vh;                   /* locked height */
       bottom: auto;
     }
     #sidebar {
       position: fixed;
       width: 100%;
-      height: 40vh;         /* sidebar height locked */
+      height: 40vh;                   /* locked height */
       bottom: 0; top: auto;
       border-top: 1px solid #e5e5e5;
       padding: .9rem 1rem;
@@ -149,20 +151,22 @@
 
   <button id="resetBtn">Reset View</button>
 
-  <!-- Your logo (file must be in the repo root, named exactly logo.png) -->
+  <!-- Uses logo.png on the map. Swap to logo2.png if you prefer the same art. -->
   <img class="footer-logo" src="logo.png" alt="Learning Hive Logo" />
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
   <script>
     /* Map setup */
     const map = L.map('map', {
       minZoom: 8, maxZoom: 14,
-      maxBounds: L.latLngBounds([[51.35, -0.5], [52.2, 1.5]]),
+      maxBounds: L.latLngBounds([[51.35,-0.5],[52.2,1.5]]),
       maxBoundsViscosity: 1.0,
       inertia: true, inertiaDeceleration: 2000
     }).setView([51.77, 0.54], 9);
 
+    /* OSM tiles (attribution intentionally hidden per your preference) */
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: ''
     }).addTo(map);
@@ -209,47 +213,47 @@
     const essexBounds = L.latLngBounds([[51.42,-0.1],[52.19,1.25]]);
     const layerGroup = L.layerGroup().addTo(map);
     const labelGroup = L.layerGroup().addTo(map);
-    const codeLayer = new Map();
+    const codeLayer  = new Map();
     const codeBounds = new Map();
-    const resetBtn = document.getElementById('resetBtn');
+    const resetBtn   = document.getElementById('resetBtn');
 
-    /* Load districts */
-    Promise.all(
-      files.map(f => fetch(`data/${f}.json`).then(r => r.json()).then(j => ({f,j})))
-    ).then(data => {
-      data.forEach(({f,j}) => {
-        L.geoJSON(j, {
-          style: () => ({ color: areas[f], weight: 1.2, fillOpacity: .1 }),
-          onEachFeature: (feature, layer) => {
-            const code = feature.properties.name || feature.properties.postcode;
-            if (!code) return;
+    /* Load districts and place centred labels */
+    Promise.all(files.map(f => fetch(`data/${f}.json`).then(r => r.json()).then(j => ({f,j}))))
+      .then(data => {
+        data.forEach(({f,j}) => {
+          L.geoJSON(j, {
+            style: () => ({ color: areas[f], weight: 1.2, fillOpacity: .1 }),
+            onEachFeature: (feature, layer) => {
+              const code = feature.properties.name || feature.properties.postcode;
+              if (!code) return;
 
-            const info = districtInfo[code] || {};
-            const centroid = turf.centerOfMass(feature).geometry.coordinates.reverse(); // [lat,lng]
+              const info = districtInfo[code] || {};
+              const centroid = turf.centerOfMass(feature).geometry.coordinates.reverse(); // [lat,lng]
 
-            codeLayer.set(code, layer);
-            codeBounds.set(code, layer.getBounds());
+              codeLayer.set(code, layer);
+              codeBounds.set(code, layer.getBounds());
 
-            const icon = L.divIcon({
-              className: 'pc-label',
-              html: `<span style="color:${areas[f]}">${code}<br><small>${info.main || ''}</small></span>`
-            });
+              const icon = L.divIcon({
+                className: 'pc-label',
+                html: `<span style="color:${areas[f]}">${code}<br><small>${info.main || ''}</small></span>`
+              });
 
-            L.marker(centroid, { icon })
-              .addTo(labelGroup)
-              .bindTooltip(`${code} — ${info.main || ''}`, { direction: 'top', offset: [0,-8] });
+              L.marker(centroid, { icon })
+                .addTo(labelGroup)
+                .bindTooltip(`${code} — ${info.main || ''}`, { direction: 'top', offset: [0,-8] });
 
-            layer.on('mouseover', () => highlight(code));
-            layer.on('mouseout',  () => !locked && clearHighlight());
-            layer.on('click',    () => toggleLock(code));
-          }
-        }).addTo(layerGroup);
+              layer.on('mouseover', () => highlight(code));
+              layer.on('mouseout',  () => !locked && clearHighlight());
+              layer.on('click',    () => toggleLock(code));
+            }
+          }).addTo(layerGroup);
+        });
+
+        buildSidebar();
+        map.flyToBounds(essexBounds.pad(.05), { duration: 2 });
       });
 
-      buildSidebar();
-      map.flyToBounds(essexBounds.pad(.05), { duration: 2 });
-    });
-
+    /* Interactions */
     let locked = null;
 
     function highlight(code){
@@ -263,7 +267,7 @@
     }
 
     function clearHighlight(){
-      codeLayer.forEach((l,c) => {
+      codeLayer.forEach((l, c) => {
         const a = c.slice(0,2);
         l.setStyle({ color: areas[a], weight: 1.2, fillOpacity: .1 });
       });
@@ -289,7 +293,8 @@
 
     function buildSidebar(){
       const list = document.getElementById('list');
-      const arr = [...codeLayer.keys()].sort();
+      const arr  = [...codeLayer.keys()].sort();
+
       list.innerHTML = arr.map(c => {
         const d = districtInfo[c] || {};
         const areaColor = areas[c.slice(0,2)] || '#ccc';
